@@ -175,7 +175,7 @@ Vector* b = new Vector();
 * 비어 있고 연속된 메모리 블록을 찾아야 함
   * 메모리 전체를 다 둘러봐야해서 느리다
 * 프로그래머가 메모리를 직접 할당 및 해제해야 함
-  * 컴파일러가 힙 메모리를 얼만큼 할당했는지 알 길이 없어서
+  * 컴파일러는 힙 메모리를 얼만큼 필요한지 알 길이 없음
   * 해제 안하면 메모리 누수 발생
 ### 3.5. 어디서 힙/스택을 쓸까
 * 기본적으로 스택을 쓰는게 좋음
@@ -185,13 +185,439 @@ Vector* b = new Vector();
   * 한 함수 안에서 안끝나고 다른함수로 전달하는 일이 많을 때
   * 반환하는 오브젝트가 너무 클 때 힙에 오브젝트를 만들어 그 주소만 반환하면 됨
     * 큰 오브젝트를 복사해서 반환하는 것보다 낫다
-### 3.6. 스택과 힙을 메모리에서 다시 살펴보기
-
+### 3.6. RAII 원칙
+* Resource Acqusition is Initialization
+* new 한 함수가 new 개체를 지워준다는 원칙
+  * new를 반환해버리면 호출자는 그것을 지워야 하는지 아닌지 잘 모르고 메모리 누수가 발생할 수 있어서
+* 함수에서 new를 하고 이를 반환하는 건 안좋은 습관이다
+  * Factory 패턴은 RAII가 적용되지 않음 
+    * 호출자가 create()로 오브젝트를 만들고 삭제해줘야 함
 ## 4. 개체 배열 생성, 개체 소멸
+### 4.1 개체 배열(Array)
+* Java
+ ```java
+ Vector[] list = new Vector[10];
+ ```
+* C++
+ ```c++
+ Vector* list = new Vector[10];
+ ```
+* 둘이 같은 걸까?
+* Java의 new Vector\[10]은 Vector 포인터 10개를 만드는 것과 같다
+ ![image](https://user-images.githubusercontent.com/22488593/174206418-600acfff-8dc2-48d2-8891-aec456568849.png)
+* C++의 new Vector\[10]는 실제 Vector 객체 10개를 만들어 준다
+ ![image](https://user-images.githubusercontent.com/22488593/174206531-518424a4-ce81-40d8-8404-65566f610853.png)
+#### 4.1.1 벡터 포인터 배열 만들기
+* Java
+ ```java
+ // 10개의 "포인터"를 힙에 만듦
+ Vector[] a = new Vector[10];
+ ```
+* C++
+ ```c++
+ // 10개의 포인터를 힙에 만듦
+ Vector** list = new Vector*[10];
+ ```
+ * Vector\*\*에서 첫번째 것은 '배열'을 의미하고 뒤에 것은 '벡터포인터'를 의미함 따라서 \*\*는 '벡터 포인터 배열' 
+### 4.2 개체 소멸
+* Java는 가비지 컬렉터가 개체를 언젠가 소멸시켜준다
+* C++
+ ```c++
+ Vector* a = new Vector;
+ Vector* list = new Vector[10];
+ // ...
+ 
+ delete a; // 메모리가 즉시 해제 됨
+ a = NULL; // a가 지워진 메모리라는 것을 NULL로 표시
+ 
+ delete[] list; // []를 반드시 넣을 것
+ list = NULL;
+ ```
+  * C++는 메모리 해제를 안 하면 메모리에 평생 남아 있음 delete로 메모리를 해제시켜줘야 함
+  * delete 하고 NULL을 넣어준 이유는 다른 곳에서 a를 사용해버릴 수 있기 때문
+  * new배열을 해제할 때 []를 꼭 붙여주자
+    * []를 붙여야 배열요소전체의 소멸자를 호출시켜줌
+### 4.3 가비지컬렉터 vs 메모리 직접 해제
+* 가비지컬렉터
+ * 편함
+ * 안전함
+ * 느리다
+  * 프로그램의 오브젝트를 다 돌면서 쓰이는지 아닌지 확인하고 메모리 해제함
+* 메모리 직접 해제
+ * 불편함
+ * 안전하지 않음
+ * 빠르다
 ## 5. 멤버 변수 초기화
-## 6. new/delete와 malloc()/free()의 차이
+* Java
+ ```java
+ public class Vector
+ {
+  private int x;
+  private int y;
+ }
+
+ Vector a = new Vector();
+ ```
+ * Java는 멤버 변수를 0으로 초기화해준다
+   * new Vector() 하면 x와 y가 0으로 초기화 됨
+* C++
+ ```c++
+ class Vector
+ {
+ private:
+   int mX;
+   int mY;
+ }
+ 
+ Vector a;
+ Vector* b = new Vector();
+ ```
+  * x와 y가 0으로 초기화되지 않고 가비지 값을 가지고 있음
+  * 멤버변수를 초기화해주는 과정이 없어서 Java보다 더 빠름
+### 5.1. Java가 멤버 변수를 0으로 초기화하는 방법
+```java
+Vector a = new Vector();
+```
+* Java 내부적으로 C로 구현된 초기화 과정을 코드로 짠다면 이렇게 될 것이다
+  ```c
+  void *ptr = malloc(sizeof(Vector)); // vector의 크기만큼 할당한 다음
+  memset(ptr, 0, sizeof(Vector));  // 0로 memset 해줌
+  a = (Vector*)ptr;
+  ```
+  * ptr의 모든 메모리를 0으로 memset하면 모든 멤버들이 0이 될까?
+    * 그렇다. integer 0의 비트 패턴은 0이고 reference type이 null일 경우 비트 패턴도 0이다.
+    * 실수값도 IEEE754에 따르면 0.0은 비트 패턴이 0임 
 ## 7. 생성자(Constructor), 초기화 리스트(Initializer List)
+* Java의 생성자
+  ```java
+  public class Vector
+  {
+    private int x;
+    private int y;
+    // 매개변수 없는 생성자
+    // 멤버가 0으로 초기화되어있으니 안 만들어도 상관없음
+    public Vector()
+    {
+      x = 5;
+      x = 1;
+    }
+  }
+  ```
+* C++의 생성자
+  ```c++
+  class Vector
+  {
+  public:
+    Vector()
+    {
+      mX = 0;
+      mY = 0;
+    }
+  private:
+    int mX;
+    int mY;
+  }
+  ```
+  * c++ 멤버가 초기화되지 않으므로 생성자에서 초기화해줘야 함
+    * 하지만 위 방법은 잘못된 방법
+      * 멤버는 초기화 리스트를 사용해야 함
+### 7.1. private, public 순서가 다른 이유
+* Java는 private, public 순서로 클래스를 구성함
+  * Java에는 헤더파일이 없고 라이브러리를 사용할 때 헤더파일을 살펴보지 않음
+  * 라이브러리를 만드는 사람의 편의성을 위해 주로 데이터가 있는 private를 위에 위치시킴
+* C++은 public, private 순서로 클래스를 구성함
+  * C++ 라이브러리를 사용할 때 헤더파일을 먼저 보는데 내가 사용할 수 있는 public 부분을 주로 보기 때문에 public을 위에 위치시킴
+### 7.2. 초기화 리스트(Initializer List)
+* 위의 생성자 예제는 대입을 이용해서 멤버를 초기화하는 거임
+* 초기화 리스트를 이용해서 멤버를 초기화하는게 맞음
+```c++
+class Vector
+{
+public:
+  Vector()
+  : mX(0)
+  , mY(0)
+  {
+  }
+private:
+   int mX;
+   int mY;
+}
+```
+* \: 와 , 로 초기화 리스트를 사용할 수 있다
+### 7.3. 초기화 리스트를 사용해야 하는 이유
+  * 대입은 초기화가 된 이후에 실행되는 대입임 
+  * 초기화 리스트는 오브젝트가 만들어 질 때 초기화가 되는 거임
+  * 상수나 참조 변수도 초기화 가능
+    * 상수와 참조 변수 모두 선언 시 바로 초기화해줘야 함
+    * 초기화 리스트를 사용하면 상수와 참조 변수가 선언될 떄 초기화 할 수 있음
+  ```c++
+  class X
+  {
+    const int mNameSize;
+    AnotherClass& mAnother;
+   
+    // 올바른 방법
+    X(AnotherClass& another)
+       : mNameSize(20)
+       , mAnother(another)
+    {
+    }
+    
+    // 이렇게 하면 에러가 남 
+    X(AnotherClass& another)
+    {
+       mNameSize = 20;  
+       mAnother = another;
+    }
+  }
+  ```
+### 7.4. 올바른 Vector클래스
+```c++
+// vector.h
+class Vector
+{
+public:
+  Vector();
+  Vector(int x, int y);
+private:
+  int mX;
+  int mY;
+}
+
+// vector.cpp
+Vector::Vector()  // 클래스 구현
+  : mX(0)
+  , mY(0)
+{
+}
+
+Vector::Vector(int x, int y)
+  : mX(x)
+  , mY(y)
+{
+}
+```
+* 매개변수가 없는 생성자는 안전을 위해 멤버를 0으로 초기화해주는게 좋음
+ * 초기화 안된 변수는 위험하므로 0으로 초기화해줌 
 ## 8. 기본 생성자, 컴파일러가 하는 일
+### 8.1. 기본 생성자
+* 기본 생성자란 매개변수를 받지 않는 생성자를 의미
+* 클래스에 생성자를 일부러 안 만들어 주면 컴파일러가 자동으로 기본 생성자를 만들어 줌
+  ```c++
+  Vector() {}
+  ```
+* 이렇게 자동으로 만들어진 생성자는
+  * 멤버 변수를 초기화하지 않음
+  * 하지만 모든 포함된 개체의 생성자를 호출
+* Java의 경우 객체를 포함하면 그것의 reference를 가지고 있으므로 null로만 초기화 해주면 됨
+* 하지만 C++은 객체 그 자체를 포함하고 있는 경우가 있는데 이 때는 그 객체의 생성자를 호출함
+### 8.2. 컴파일러가 하는 일
+* 사례1 - Vector 클래스에서 생성자가 없는 경우
+  * 컴파일러가 기본 생성자를 만들어 준다
+  ![image](https://user-images.githubusercontent.com/22488593/174223735-00152a7b-9fd2-4d2d-84e2-c4c86e9ac7cc.png)
+* 사례2 - Vector 클래스에 생성자가 있는 경우
+  * 컴파일러가 기본 생성자를 만들어주지 않는다
+  ![image](https://user-images.githubusercontent.com/22488593/174223865-3d8e3425-8a2d-4be5-a2d2-153cf40d489f.png)
 ## 9. 생성자 오버로딩(Overloading), 소멸자(Destructor)
+### 9.1 생성자 오버로딩 
+* 여러 개의 생성자를 만들 수 있음
+ * 같은 이름이지만 인자의 개수나 자료형이 다름
+* 기본 생성자
+```c++
+Vector() : mX(0), mY(0) {}
+Vector a; // 기본 생성자 호출
+```
+* 매개변수를 가지는 생성자
+```c++
+// 2개의 매개변수를 가지는 생성자
+Vector(int x, int y)
+  : mX(x)
+  , mY(y)
+{
+}
+
+Vector a(1, 3); // 매개변수 목록이 일치하는 생성자 호출
+```
+### 9.2 소멸자(Destructor)
+* 개체가 지워질 때 호출됨
+* Java는 소멸자가 없다
+  * 자동으로 가비지를 수집하기 때문에 소멸자 없음 
+* C++ 소멸자가 있음
+  * C++ 클래스는 그 안에서 동적으로 메모리를 할당할 수도 있음
+  * 그런 경우 필히 소멸자에서 메모리를 직접 해제해 줘야 한다
+```c++
+// vector.h
+class Vector
+{
+public:
+  ~Vector();
+private:
+  int mX;
+  int mY;
+};
+
+// vector.cpp
+Vector::~Vector()
+{
+}
+```
+
+* C++의 소멸자는 언제 호출될까
+  * Stack에 개체를 만드는 경우 Stack에서 소멸될 때 소멸자가 호출
+  * heap에 개체를 만드는 경우(new) delete 할 때 소멸자가 호출됨  
+* 소멸자는 오버로딩이 없음
+  * 매개변수가 없는 하나의 상태로만 존재
+* "가상 소멸자"라는 개념도 있음
+### 9.3. 클래스 안에서의 동적 메모리 할당
+* std::string 클래스를 직접 구현해보자
+```c++
+// MyString.h
+class MyString
+{
+public:
+  MyString();
+private:
+  char* mChars;
+  int mLength;
+  int mCapacity;
+};
+
+// MyString.cpp
+MyString::MyString()
+  : mLength(0)
+  , mCapacity(15)
+{
+  mChars = new char[mCapacity + 1];
+}
+```
+* 위 코드를 실행하면 메모리에서 어떤 일이 일어날까?
+![image](https://user-images.githubusercontent.com/22488593/174230261-5be9a27d-ebc6-43e0-8db9-eaab791f51b6.png)
+* name이 스택의 Foo()영역 안에 있다
+  * 각각 mLength, mCapacity, mChars
+* Foo() 이후에는 무슨 일이 일어날까?
+![image](https://user-images.githubusercontent.com/22488593/174230545-61b3705e-2c83-4395-b52d-4dc6e479d99e.png)
+* Foo() 영역은 반환됬지만 여전히 힙 메모리에 mChars가 가리키던 메모리가 남아 있는 상황
+  * 메모리 누수 발생!
+* 메모리 누수가 발생하지 않기 위해서는 소멸자로 할당한 메모리를 해제해줘야 함
+```c++
+// MyString.h
+class MyString
+{
+public:
+  MyString();
+  ~MyString();
+private:
+  char* mChars;
+  int mLength;
+  int mCapacity;
+};
+
+// MyString.cpp
+MyString::MyString()
+  : mLength(0)
+  , mCapacity(15)
+{
+  mChars = new char[mCapacity + 1];
+}
+
+MyString::~MyString()
+{
+  delete[] mChars;
+  // mCapacity == 0; 굳이 할 필요 없음 
+  // mChars == NULL; 굳이 할 필요 없음 
+}
+```
+* 메모리 누수가 일어나지 않음 
 ## 10. const 멤버 함수
+* Vector 클래스의 멤버 함수 
+```c++
+  class Vector
+  {
+  public:
+    void SetX(int x);
+    void SetY(int y);
+    int GetX() const;
+    int GetY() const;
+    void Add(const Vector& other);
+  private:
+    int mX;
+    int mY;
+  }
+```
+  * getter와 setter를 추가해보았음
+  * GetX()와 GetY()뒤에 const는 뭘까?
+ ### 10.1. const란?
+ * 바꿀 수 없는 것을 말함
+ * const 변수는 초기화 후 대입을 할 수 없다
+ * const 메서드는 해당 개체 안의 어떠한 것도 바꿀 수 없음
+   * 개체 안의 멤버 변수를 바꿀 수 없음 
+ ```c++
+ // const 변수
+ const int LINE_SIZE = 20;
+ LINE_SIZE = 10; // 컴파일 에러
+ 
+ // const 메서드
+ int GetX() const;
+ ```
+ ### 10.2. const 멤버 함수
+ * 멤버 변수가 변하는 것을 방지
+```c++
+int GetX() const
+{
+  return mX;
+}
+
+void AddConst(const Vector& other) const
+{
+  mX = mX + other.mX;  // 컴파일 에러
+  mY = mY + other.mY   // 컴파일 에러 
+}
+```
+* 함수를 고쳤는데 const가 있어서 컴파일 에러가 나면 여기에 왜 const가 있는지 다시 한번 생각해보는게 좋다
+  * 고치면 안되는 함수일 수 있기 때문에   
 ## 11. 구조체(Struct) vs 클래스(Class)
+* C에서는 구조체(struct)를 데이터를 한 군데에 모아서 그룹 짓는 용도로 사용했다
+  * C에서는 OOP가 존재하지 않기 때문에 함수도 같이 그룹지을수는 없었다
+* C++에서는 데이터와 함수를 함께 그룹화할 수 있는 class라는 개념이 생김
+* C++에서는 구조체가 사라졌을까?
+  * 여전히 존재함 
+### 11.1 구조체 vs 클래스
+ * C++에서 구조체와 클래스는 동일한 개념
+   * C의 구조체와 달리 데이터와 함수 같이 그룹화 시킬 수 있음 
+ * 구조체와 클래스의 차이는 기본 접근권한이 다르다는 것 뿐이다
+   * 구조체 : public
+   * 클래스 : private
+ ```c++
+ // 구조체
+ struct Vector
+ {
+   int X;  // public 멤버 변수
+   int Y;  // public 멤버 변수
+ };
+ 
+ // 클래스
+ class Vector
+ {
+   int mX;  // private 멤버 변수
+   int mY;  // private 멤버 변수
+ }
+ // 위 코드는 안 좋은 코딩 스타일을 가지고 있음 
+ // private 멤버 변수면 앞에 private라고 표시해 주는게 맞다
+ ```
+ ### 11.2 구조체에 관한 코딩표준
+ * C++에서는 구조체를 클래스 처럼 쓸 수 있음
+   * 하지만 절대 그러지 말 것
+   * 구조체는 C 스타일로 쓰자
+ * struct는 순수하게 데이터뿐이여야 함 (Plain Old Data, POD)
+   * Plain Old Data는 int, float과 같은 단순한 옛날 데이터를 말함
+     * 메모리 카피를 가능하게 하기 위하여
+     * Animal*과 같은 개체 포인터를 갖고 있으면 카피하기 힘들다
+   * 사용자가 선언한 생성자나 소멸자 X
+   * static아닌 private/protected 멤버 변수 X
+     * 멤버 변수는 전부다 public으로  
+   * 가상 함수 X
+   * 메모리 카피가 가능함
+     * memcpy()를 사용하여 struct를 char[]로, 혹은 반대로 복사할 수 있음
+   * 사실 이건 회사마다 다르다 어느 회사는 생성자와 소멸자는 허용하고 함수 생성만 막는 경우도 있음
+     * 이 경우 메모리 카피는 불가능함 
