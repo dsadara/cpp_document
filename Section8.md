@@ -397,15 +397,226 @@ std::cout << vector1 << std::endl;  // 컴파일 에러
   * ostream에 출력을 하고 그 ostream을 반환하면 된다
   * ostream에 무엇을 쓸 것이기 때문에 const가 아님 
 ## 5. 연산자 오버로딩과 const
+### 5.1. 어디에나 const를 붙이자
 ```c++
 Vector operator+(const Vector& rhs) const;
 ```
 * **const**를 쓰는 이유?
   * 멤버 변수의 값이 바뀌는 것을 방지
   * 최대한 많은 곳에 const를 붙일 것
-  * 지역(local) 변수에 까지도
+  * 함수, 매개변수, 지역(local) 변수에 까지도
     * POCU의 코딩 표준
       * 모든 회사가 이 코딩표준을 가지고 있는 건 아님
-
+* 값을 바꿀 일이 없으면 const를 붙이는 게 좋다
+## 5.2 코드가 길면 일어나는 일
+```c++
+  int func(int x)
+  {
+    // 엄청 긴 코드
+  
+    x++;  // 모르고 증감시킴
+    
+    // 엄청 긴 코드
+    // ~~
+    
+    switch(x);  // 수정된 값이 들어감
+  }
+```
+* 코드가 길어지면 모르고 x를 수정할 수도 있다
+* 그리고 멤버인 x를 증감시키는지 매개변수인 x를 증감시키는지 알 수 없다
+  * Java에서는 this를 붙여서 구분
+  * C++은 접두사 m을 붙여서 구분
+## 5.3. const &
+  * const &를 사용하는 이유?
+     * 불필요한 개체의 사본이 생기는 것을 방지
+     * 멤버 변수가 바뀌는 것도 방지
+     * 오브젝트의 상태를 바꿀 일이 없으면 무조건 const를 붙이자 
+  ```c++
+  Vector operator+(const Vector& rhs) const;
+  std::ostream& operator<<(const std::ostream& os, const Vector& rhs);    // 잘못된 예
+  ```
+  * 두번째는 ostream에 출력을 해야 하므로 const를 붙이는 건 잘못된 것이다
+## 5.4. 연산자 오버로딩에 const를 사용하지 않는 경우
+```c++
+vector1 += vector2;
+vector1 = vector1.operator+=(vector2);
+```
+* \+\= 의 연산자 오버로딩 함수에는 const가 들어갈까?
+  * 위 연산은 호출의 기본이 되는 좌항을 바꾸는 예 이므로 const가 들어갈 수 없음
+```c++
+Vector& operator+=(const Vector& rhs);
+```
+* \&을 붙여서 반환하면 장점이
+  * 개체 복사 없이 반환할 수 있음
+  * 연산자 여럿을 연결해서 쓸 수 있음(Chaining)
+    ```c++
+    vector1 += vector2 += vector3;
+    ```
+* 나 자신을 참조로 반환하는 법
+```c++
+// Vector.cpp
+Vector& Vector::operator+=(const Vector& rhs)
+{
+  mX += rhs.mX;
+  mY += rhs.mY;
+  
+  return *this;
+}
+```
+  * this는 나 자신을 가리키는 개체이고 그 포인터가 가리키는 개체를 반환하면 된다
+## 5.5. \&를 사용하면 메모리에서 일어나는 일
+```c++
+// Vector.cpp
+Vector Vector::operator+(Vector& rhs)
+{
+  Vector r;
+  
+  r.mX = this->mX + rhs.mX;
+  r.mY = this->mY + rhs.mY;
+  
+  return r;
+}
+  
+// main.cpp
+Vector v1(10, 20);
+Vector v2(30, 40);
+  
+Vector result = v1 + v2;
+```
+![image](https://user-images.githubusercontent.com/22488593/174478170-5903e921-ff27-475b-bd83-beaddfdece6c.png)
+* rhs는 v2의 주소를 가리키고 있고
+* operator+()함수를 수행하면 r에는 각각 v1 + v2한 값이 들어있다
+![image](https://user-images.githubusercontent.com/22488593/174478244-8ca62e1d-a02e-4a2b-8b36-c666e3eac820.png)
+* 함수가 반환되고 result에 60 40이 대입된 모습
+### 5.5.1. 매개변수로 \&을 사용하지 않으면 일어나는 일
+![image](https://user-images.githubusercontent.com/22488593/174478353-b92696da-970a-4b25-ad84-4fe25bc262aa.png)
+* 스택의 operator+()영역에 v2의 값이 그대로 복사되어있다
+* \&를 쓸 때와 안 쓸 때 차이는 스택 메모리를 좀 더 쓰고 안쓰고의 차이만 있다
+### 5.6. 연산자 오버로딩의 제한사항
+  1. 오버로딩된 연산자는 매개변수로 최소한 하나의 사용자정의 형을 가져야 함
+    * 기본 타입이면 이미 존재하는 연산자임 
+  2. 오버로딩된 연산자는 피연산자 수를 동일하게 유지해야 함
+    * 이항 연산자면 피연산자수를 한 개로 만들 수는 없음
+    * 단항연산자를 오버로딩할 수는 있음
+  3. 새로운 연산자 부호를 만들 순 없음
+  4. 오버로딩할 수 없는 연산자도 존재
 ## 6. 연산자 오버로딩을 남용하지 말 이유
+```c++
+Vector vector = vector1 << vector2;
+```
+* 위 코드만 보면 무슨 일을 하는지 알 수 없다
+  * 밀어넣기 연산자?
+  * 비트 쉬프트?
+* 연산자만 보고서 어떤 함수인지 유추하기 힘들다면
+  * 차라리 **함수를 만들 것**
+### 6.1 대입(assignment) 연산자
+  * operator=
+  * 이 연산자가 하는 일은 복사 생성자와 거의 동일
+    * 복사 생성자는 A를 생성할 때 B를 대입
+    * 대입 연산자는 A에 B를 대입
+    * A를 새로 만든다는 것 말고는 차이가 없다
+    * 대입연산자는 메모리를 해제해 줄 필요가 있을수도 있다
+        * A에 string 클래스가 멤버로 있으면 A의 것을 지우고 B의 것을 복사 해 A에 대입해줘야 한다
+    * 복사 생성자를 구현했다면 대입 연산자도 구현해야 할 것임
+### 6.2. 암시적 operator=
+  * Operator= 구현이 안 되어 있으면 컴파일러가 operator=연산자를 자동을 만들어 줌
+    * 암시적 복사 생성자 처럼 얕은 복사로 멤버별로 값을 대입 해줌 
+  ![image](https://user-images.githubusercontent.com/22488593/174479843-d567846f-fb75-428a-969a-9338f9b95606.png)
 ## 7. 암시적 함수들을 제거하는 법 
+* 클래스에 딸려오는 기본 함수들
+   * 매개변수 없는 생성자
+   * 복사 생성자
+   * 소멸자
+   * 대입(=) 연산자 
+* 이것들을 원치 않는다면?
+## 7.1. 전통적인 방법
+* 방법 1
+  ```c++
+  class Vector
+  {
+  public:
+    Vector(const Vector& other);
+  private:
+    int mX;
+    int mY;
+  };
+  
+  // Main.cpp
+  Vector v1; // 컴파일 에러 
+  ```
+  * 생성자를 만들어서 기본 생성자가 생성이 안되게 함
+  * 기본 생성자를 지우는 법이라고 하기에는 좀 애매함
+* 방법 2
+  ```c++
+  // Vector.h
+  class Vector
+  {
+  public:
+  
+  private:
+    Vector() {};
+  
+    int mX;
+    int mY;
+  };
+  // Main.cpp
+  Vector v1;    // 컴파일 에러 
+  ```
+  * 기본 생성자를 private에 넣어 외부에서 호출을 못하게 함
+  * factory 패턴에서 쓰인다
+    * 기본 생성자를 숨겨 new 대신 create()로만 생성하게 함
+## 7.2. 암시적 복사 생성자를 지우는 법
+```c++
+class Vector
+{
+public:
+  Vector();
+private:
+  Vector(const Vector& other) {}
+  
+  int mX;
+  int mY;
+};
+  
+// Main.cpp
+Vector v1;
+Vector v2(v1);    // 컴파일 에러 
+```
+## 7.3. 암시적 소멸자를 지우는 법
+```c++
+class Vector
+{
+public:
+  
+private:
+  ~Vector() {}
+  
+  int mX;
+  int mY;
+}
+  
+// Main.cpp
+Vector v1;      // 컴파일 에러
+Vector* v2 = new Vector();
+delete v2;      // 컴파일 에러
+```
+  * 암시적 소멸자를 지우면 개체를 지울 때 컴파일 에러가 난다
+## 7.4. 암시적 operator=를 지우는 법
+```c++
+// Vector.h
+class Vector
+{
+public:
+
+private:
+  const Vector& operator=(const Vector& rhs);
+  
+  int mX;
+  int mY;
+};
+  
+// Main.cpp
+Vector v1;
+Vector v2 = v2; // 컴파일 에러
+```
+  * 함수 구현을 안해도 됨 
