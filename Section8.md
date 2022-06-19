@@ -142,8 +142,270 @@ delete classRecordCopy;
 * delete를 실행하면 문제가 더 이상 발생하지 않는다
 ![image](https://user-images.githubusercontent.com/22488593/174464032-a3405e68-04d2-407b-9892-acee4f96061e.png)
 ## 2. 함수 오버로딩(overloading)
+* C에는 존재하지 않고 Java, C++에만 존재
+* 같은 이름의 메소드를 중복하여 정의하는 것을 의미
+* 매개변수 목록을 제외하고는 모든 게 동일함 
+  * 반환형은 상관 없음
+  * 함수 이름과 매개변수가 같고 반환형이 다르면 컴파일 에러가 남
+      * 컴파일러는 어떤 함수를 호출해야할 지 모르니깐
+    ```c++
+    void Print(int score);         // OK
+    void Print(const char* name);  // OK
+    void Print(float gpa, const char* name);    // OK
+    int Print(int Score);   // 컴파일 에러
+    int Print(float gpa);   // OK
+    ```
+### 2.1. 함수 오버로딩 매칭하기
+  * 오버로딩 된 함수 중에 어떤 함수를 호출해야 하는지 판단하는 과정
+  * 함수 매칭 결과는 3개가 있음
+    1. 매칭하는 함수를 찾을 수 없음
+      * 컴파일 에러
+    2. 매칭하는 함수를 여러 개 찾음
+      * 누굴 호출할지 모호하므로 컴파일 에러 
+    3. 가장 적합한 함수를 하나 찾음
+      * OK
+  * 함수 오버로딩 매칭하기 문제1
+  ```c++
+  void Print(int score);    // (1)
+  void Print(const char* name);   // (2)
+  void Print(float gpa, const char* name);    // (3)
+  
+  Print(100);   // (1)이 호출됨 
+  Print("Pope");  // (2)
+  Print(4.0f, "Pope");   // (3)
+  Print(77.5f);   // (1), float형에서 int형으로 암시적 형 변환이 일어남(컴파일 경고)
+  Print("Pope", 4.0f);    // 컴파일 에러, 컴파일러가 매개변수 순서를 뒤집어주지는 않는다
+  ```
+   * 함수 오버로딩 매칭하기 문제2
+    ```c++
+    int Max(int, int);    // (1)
+    int Max(double, double);    // (2)
+    int Max(const int a[], size_t);   // (3)
+    int Min(int, int);  // (4)
+
+    int main()
+    {
+      std::cout << Max(1, 3.14) << std::endl;  
+    }
+    ```
+  * Max(1, 3.14)는 (1)이 호출될까 (2)가 호출될까
+  * 둘다 정확한 매치 1개, 표준 변환(형 변환) 1개로 모호하다
+    ![image](https://user-images.githubusercontent.com/22488593/174466000-51d17bb2-2a1a-4a48-9bcf-85bfcab2922e.png)
+  * 이 경우 컴파일 에러
+## C++ 연산자의 종류
+  * 단항(unary) 연산자
+  ![image](https://user-images.githubusercontent.com/22488593/174466378-a96124b0-4427-4f8b-b804-72fbec684c51.png)
+  ![image](https://user-images.githubusercontent.com/22488593/174466338-afd70ac4-f5f8-4258-b40a-f388ee8787e8.png)
+  * 이항(binary) 연산자
+  ![image](https://user-images.githubusercontent.com/22488593/174466371-d476d9a6-04e4-4d33-8d3d-9343a4cf2f15.png)
+  ![image](https://user-images.githubusercontent.com/22488593/174466355-e50dcbd4-31b4-45de-a83a-7ad190842851.png)
+  * 그 외 연산자
+  ![image](https://user-images.githubusercontent.com/22488593/174466420-ccdf27b7-5b23-4c8b-a7ec-a7b8da9a918b.png)
 ## 3. 연산자(operator) 오버로딩
+### 3.1. 연산자
+* 연산자는 사실 함수처럼 작동한다
+  * 단항(unary) 연산자와 이항(binary) 연산자는 매개변수의 차이라고 볼 수 있음
+* C++은 프로그래머가 연산자를 오버로딩 할 수 있음
+### 3.2. 연산자 오버로딩
+  * 하나의 연산자를 여러 의미로 사용할 수 있게 해줌
+  * C와 Java는 연산자 오버로딩을 지원하지 않음
+    * Java는 두 문자열을 비교할 떄 equals()함수를 사용하지만 C++은 ==연산자로 비교할 수 있다
+  ```c++
+  int1 = int1 + int2;   // 두 int형 변수를 더함
+  float1 = float1 + float2;   // 두 float형 변수를 더함
+  name = firstName + lastName;  // 두 string형 변수를 더함
+  ```
+  * 연산자 오버로딩은 두가지가 있음
+      * 멤버 함수
+      * 멤버 아닌 함수(전역함수로)
+#### 3.2.1. 멤버 함수를 이용한 연산자 오버로딩
+* 연산자 역시 메서드임
+  ```c++
+  Vector sum = v1 + v2;
+  Vector sum = v1.operator+(v2);    // 위와 동일
+  std::cout << number;
+  std::cout.operator<<(number);     // 위와 동일
+  ```
+* 특정 연산자들은 멤버 함수를 이용해서만 오버로딩이 가능
+  * \=, \(), \[], \->
+* Vector의 operator+() 연산자를 오버로딩해보자
+  ```c++
+  Vector result = vector1 + vector2;
+  Vector result = vector1.operator+(vector2);   // 이게 가능하게 연산자 오버라이딩
+  ```
+```c++
+// Vector.cpp
+Vector Vector::operator+(const Vector& rhs) const
+{
+  Vector sum;
+  sum.mX = mX + rhs.mX;
+  sum.mY = mY + rhs.mY;
+
+  return sum;
+}
+```
+* rhs는 복사할 필요가 없으니까 참조로 전달
+* sum을 반환하고 멤버를 수정할 일이 없으므로 const멤버함수로 선언
+* 멤버 연산자 작성하는 법
+  ![image](https://user-images.githubusercontent.com/22488593/174467498-5483391b-b16c-4f0d-9b60-95438ebd4320.png)
+  ```c++
+  Vector Vector::operator-(const Vector& rhs) const;
+  Vector Vector::operator*(const Vector& rhs) const;
+  Vector Vector::operator/(const Vector& rhs) const;
+  ```
+#### 3.2.2. 멤버 아닌 함수를 이용한 연산자 오버로딩
+* 이런 짓을 할 수 있을까?
+```c++
+std::cout << vector1.mX << ", " << vector1.mY << std::endl;
+```
+  * mX, mY는 각각 private 멤버변수로 접근할 수 없다
+* 다른 시도
+```c++
+std::cout << vector1.GetX() << ", " << vector1.GetY() << std::endl;  
+```
+  * 모든 멤버변수에 getter가 있는 것이 아님
+  * 그리고 getter를 쓰기도 귀찮음
+* 우리가 원하는 것
+```c++
+Vector vector1(10, 20);
+std::cout << vector1;
+// 출력결과: 10 20
+```
+* 아래와 같은 연산자를 만들어야 함
+  ```c++
+  #include <iostream>
+  std::cout.operator<<(vector1);
+  void cout::operator<<(const Vector& rhs) const
+  {
+    // ..
+  }
+  ```
+* cout의 멤버 함수를 만들려는데 cout에 접근할 수 없음
+  * ostream 클래스에 넣으면 되지 않나?
+* 우리는 헤더파일만 접근할 수 있고 cpp파일에는 접근할 수 없다
+* 이때는 전역함수로 연산자 오버라이딩 함수를 만들어 줘야 함
+* 여기서 알 수 있는 사실
+  * **좌변이 되는 개체의 접근 권한이 없을 때는 전역함수의 오버로딩이 필요하다**
+* 이제 다시 Vector의 operator<<() 연산자를 만들어보자 
+  ```c++
+  void operator<<(std::ostream& os, const Vector& rhs)
+  {
+    os << rhs.mX << ", " << rhs.mY;
+  }
+  ```
+  * 위 코드는 문제가 있음
+    1. 전역함수를 어디에 넣어야 할지 모름
+    2. Vector클래스의 private멤버에 대한 접근 권한이 없음
+  * 위 문제를 해결하기 위해서 **friend**키워드를 사용하면 된다 
 ## 4. friend 키워드
+  * 클래스 정의 안에 friend 키워드 사용 가능
+      * 다른 클래스나 함수가 나의 private또는 protected 멤버에 접근할 수 있게 허용
+      * 우리집 친구(friend)는 우리집의 비밀 금고(private 멤버)에 접근 권한이 있다
+### 4.1. friend 클래스
+  * 다른 namespace의 클래스가 해당 클래스의 private 멤버를 접근할 수 있게 함 
+```c++
+// X.h
+class X
+{
+  friend class Y;   // friend 클래스 추가!
+private:
+  int mPrivateInt;
+};
+  
+// Y.h
+#include "x.h"
+class Y
+{
+public:
+  void Foo(X& x);
+};
+  
+// Y.cpp
+void Y::Foo(X& x)
+{
+  x.mPrivateInt += 10;  // OK  
+}
+```
+* Java 객체지향쪽에서의 안티패턴임
+  * 다른 클래스에서 private멤버를 접근한다는 것은 캡슐화 개념에 위배되는 느낌임
+  * 큰 객체를 작은 객체로 나누는 경우가 있을 때 원래 공유하던 변수를 공유를 해야하는 때가 있는데
+  * 이 때 getter와 setter를 쓰면 같은 패키지안 모든 클래스가 이에 접근이 가능하다는 문제가 생김
+  * 이 경우에는 c++의 friend를 사용하면 특정 클래스만 접근 가능하게 할 수 있다
+### 4.2. friend 함수
+  * 클래스 바깥의 함수에 private 접근 권한을 줄 수 있음
+      * 전역함수, 다른 클래스의 멤버함수
+  * 클래스 안 함수 선언부에 함수 시그니처를 적고 앞에 friend 키워드를 붙이면 됨 
+```c++
+// X.h
+class X
+{
+  friend void Foo(X& x);    // friend함수는 클래스 X의 멤버 함수가 아니다 
+private:
+  int mPrivateInt;
+};
+
+// GlobalFunction.cpp
+void Foo(X& x)
+{
+    x.mPrivateInt += 10; // OK  
+}
+```
+### 4.3. 멤버 아닌 연산자 오버로딩을 작성하는 법
+  * 정리하자면 이렇다
+  ![image](https://user-images.githubusercontent.com/22488593/174468942-de6a57a0-7299-46c2-b3a7-cfbac4f3e4a9.png)
+### 4.4. friend를 이용하여 Vector의 Operator<<()을 다시 구현하면
+```c++
+// Vector.h
+class Vector
+{
+  friend void operator<<(std::ostream& os, const Vector& rhs);
+  public:
+    // ..
+  private:
+    // ..
+}
+
+// Vector.cpp
+void operator<<(std::ostream& os, const Vector& rhs)
+{
+  os << rhs.mX << ", " << rhs.mY;  
+}
+  
+// main.cpp
+Vector vector1(10, 20);
+std::cout << vector1;
+```
+* friend 함수 선언은 보통 public 위에 위치함
+  * 외부 함수이므로 접근 제어자가 의미가 없다
+* 함수 구현부는 아무데나 넣어도 되지만 Vector하고 관련이 있으므로 Vector.cpp에 위치시켰다
+### 4.5. 연산자 중첩 시 문제
+```c++
+void operator<<(std::ostream& os, const Vector& rhs);
+  
+std::cout << vector1 << std::endl;  // 컴파일 에러
+```
+* std::cout \<\< vector1 연산 시 함수의 반환값이 없어서 뒤의 << 연산을 하지 못함 
+### 4.6. Chaining이 가능한 operator<<()
+```c++
+  std::ostream& operator<<(std::ostream& os, const Vector& rhs)
+  {
+    os << rhs.mX << ", " << rhs.mY;
+    return os;
+  }
+```
+  * 반환값을 void가 아닌 ostream으로 변경
+  * ostream에 출력을 하고 그 ostream을 반환하면 된다
+  * ostream에 무엇을 쓸 것이기 때문에 const가 아님 
 ## 5. 연산자 오버로딩과 const
+```c++
+Vector operator+(const Vector& rhs) const;
+```
+* **const**를 쓰는 이유?
+  * 멤버 변수의 값이 바뀌는 것을 방지
+  * 최대한 많은 곳에 const를 붙일 것
+  * 지역(local) 변수에 까지도
+    * POCU의 코딩 표준
+      * 모든 회사가 이 코딩표준을 가지고 있는 건 아님
+
 ## 6. 연산자 오버로딩을 남용하지 말 이유
 ## 7. 암시적 함수들을 제거하는 법 
