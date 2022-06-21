@@ -476,5 +476,99 @@ private:
   * 흔히 쓰일일이 없을 것이다..
 ### **다중 상속을 최대한 쓰지 말것, 대신 인터페이스를 사용하자**
 ## 7. 추상(Abstract) 클래스
+* 구체적인(concrete) 클래스가 아닌것이 추상(abstract) 클래스
+  * 구체적인 클래스는 함수의 구현체가 있는 클래스
+    * 우리가 그동안 봐왔던 클래스
+  * 함수가 여러 개 있는데 그 중 하나라도 구현이 안되면 추상 클래스
+### 7.1. 추상 클래스
+```c++
+// Animal.h
+class Animal
+{
+public:
+  virtual ~Animal();
+  virtual void Speak() = 0;
+private:
+  int mAge;
+};
 
+// Cat.h
+class Cat : public Animal
+{
+public:
+  ~Cat();
+  void Speak();
+private:
+  char* mName;
+}
+```
+* 함수는 만드는데 구현체는 필요 없을 때 
+  * Speak()을 Cat에서 구현을 하고 Animal에서는 구현을 하지 않고 싶을 때
+* virtual void Speak() \= 0\; 이런 식으로 0을 대입하면 추상 클래스를 만들 수 있음
+### 7.2. 순수(pure) 가상함수
+* 구현체가 없는 멤버 함수
+* 파생 클래스가 구현해야 함
+![image](https://user-images.githubusercontent.com/22488593/174774226-832f61f7-d54c-4049-a2e6-f0d0d77328fb.png)
+  * Cat에서Speak()을 구현하지 않으면 컴파일 에러
+### 7.3. 순수 가상함수를 선언하는 법
+![image](https://user-images.githubusercontent.com/22488593/174774549-f60f9bb0-33b2-4cbe-a863-978414a14005.png)
+```c++
+virtual void Speak() = 0;
+virtual float GetArea() = 0;
+```
+### 7.4. 추상 클래스
+* 순수 가상함수를 가지고 있는 베이스 클래스를 추상 클래스라 함
+  * 추상 클래스에서 개체를 만들 수 없음
+  * 추상 클래스를 포인터나 참조 형으로는 사용가능
+    * 동적 바인딩으로 동작하므로 문제없다
+```c++
+class Animal
+{
+public:
+  virtual void Speak() = 0;
+private:
+  int mAge;
+};
+```
+### 7.5. 순수 추상 클래스
+* 순수 가상 함수만 가지는 클래스
+* 데이터도 없다
+* 
 ## 8. 인터페이스(Interface)
+* C++은 인터페이스를 언어에서 지원 안함
+  * 대신 순수 추상클래스와 다중상속을 이용해서 인터페이스를 흉내낼 수 있음 
+```c++
+// IFlyable.h
+class IFlyable
+{
+public:
+  virtual void Fly() = 0;
+};
+
+// IWalkable.h
+class IWalkable
+{
+public:
+  virtual void Walk() = 0;
+};
+
+class Bat : public IFlyable, public IWalkable
+{
+public:
+  void Fly();
+  void Walk();
+};
+
+class Cat : public IWalkable
+{
+public:
+  void Walk();
+};
+```
+* 인터페이스는 추상 클래스와 달리 데이터는 없고 함수만 있음
+* 동작을 정의하는데 인터페이스가 유용함
+  * IFlyable, IWalkable
+* 다중상속을 사용하지만 데이터가 없고, 함수가 중복될 일이 없다
+### 8.1. 인터페이스 사용 팁
+* 다른 클래스지만 같은 인터페이스끼리 배열을 만들어서 반복문 처리를 쉽게 할 수 있다
+  * 가상 함수의 동적 바인딩으로 각 클래스가 개별 동작을 할 수 있다 
