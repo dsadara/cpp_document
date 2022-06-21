@@ -251,6 +251,7 @@ bool TryDivide(Vector& a, Vector& b, Vector& c)
 - 읽기전용 매개변수는 상수 참조로
 - 출력결과용 매개변수는 포인터로
   ```c++
+    bool TryDivide(Vector* result, const Vector& a, const Vector& b);
     TryDivide(&a, b, c);
   ```
 - 포인터 매개변수에는 &가 앞에 붙으니 구분이 된다

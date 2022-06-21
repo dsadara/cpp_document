@@ -3,7 +3,7 @@
 > 중간고사 대비 주제
 >
 > 1. 접근 제어자(Access Modifier)
-
+> 2. 스택 메모리 vs 힙 메모리
 ## 1. OOP란?
 
 ### 1.1. C++에서의 OOP vs Java에서의 OOP
