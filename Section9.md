@@ -309,15 +309,172 @@ yourCat->GetName();
   - Java는 자식의 것이 호출된다
   - C++은 부모의 것이 호출됨
 - Java는 실체를 따라가고 C++은 무늬를 따라 호출이 됨
-
+* 이것의 이유는 **바인딩**의 차이에 있다
 ## 3. 정적 바인딩
+* 무늬따라 가는 것
+* C++는 기본이 정적 바인딩
+### 3.1. 정적 바인딩 - 멤버 함수
+* Animal의 Speak()와 Cat의 Speak()의 메모리 뷰
+![image](https://user-images.githubusercontent.com/22488593/174729943-ef62f712-299d-4997-8d9e-0a2fc42acfe2.png)
+```c++
+// main.cpp
+Cat* myCat = new Cat();
+myCat->Speak(); // Call   Cat::Speak(0x0AA16C2)
 
+Animal* yourCat = new Cat();
+yourCat->Speak();   // Call   Animal::Speak(0x0AA168D)
+```
+  * myCat은 Cat의 Speak() 호출, yourCat은 Animal의 Speak() 호출
 ## 4. 동적 바인딩
+* 무늬가 아닌 실체따라 가는 것
+### 4.1. C++에서 동적 바인딩을 하려면 가상(virtual) 함수를 사용
+```c++
+class Animal
+{
+public:
+  virtual void Speak(); // 가상 함수 선언
+}
+class Cat : public Animal
+{
+public:
+  void Speak();
+};
 
+Cat* myCat = new Cat();
+myCat->Speak();   // Meow
+Animal* yourCat = new Cat();
+yourCat->Speak();   // Meow
+```
+* Animal포인터여도 Cat의 speak()가 호출 된다
+### 4.2. 가상함수
+* 자식 클래스의 멤버함수가 언제나 호출됨
+  * 부모의 포인터 또는 참조를 사용 중이더라도
+* 동적(dynamic) 바인딩/늦은(late) 바인딩
+  * 실행 중에 어떤 함수를 호출할지 결정한다
+  * 당연히 컴파일 중에 어떤 함수를 호출할지 정하는 정적 바인딩보다 느림
+* 이를 위해 **가상 테이블**이 생성됨
+  * 모든 가상 멤버함수의 주소를 포함   
+* Java의 모든 것이 기본적으로 가상 함수임
+  * final 키워드로 정적 바인딩으로 만들 수는 있다
+* 가상 테이블은 **클래스 마다 하나**  있다
+  * 멤버 함수는 개체 마다 하나씩 있는 것이 아니라고 했다
+* 개체를 생성할 때, 해당 클래스의 가상 테이블 주소가 함께 저장됨
+  * 가상 테이블의 포인터 4바이트가 들어있고 그다음에 개체의 멤버가 저장된 형태
+### 4.3. 가상 테이블
+* 가상 테이블의 동작을 생각해보면 느림
+  * 힙 메모리에서 해당하는 함수를 찾아서 lookup해야 함 
+* 가상 테이블의 주소는 알았는데 가서 몇 번째 함수인지 어떻게 알까? 
+### 4.3.1. 동적 바인딩 메모리 뷰
+* 컴파일 시 만들어지는 것들
+  ![image](https://user-images.githubusercontent.com/22488593/174738057-44395052-c096-418a-bbbc-6ccaa35d58b2.png)
+    * 코드 섹션에 Animal과 Cat의 Move()와 Speak()이 들어가 있다
+    * Animal과 Cat의 가상 테이블이 따로 존재함
+    * 여기서 중요한 건 함수의 순서가 다 동일하다는 것임
+        * 함수의 순서가 동일해야 가상 테이블에서 어떤 함수가 어디있는지 찾을 수 있다
+* 실행 중에 만들어지는 것들
+  ![image](https://user-images.githubusercontent.com/22488593/174738953-43211244-3f8c-49b4-9bba-da63e3a8563a.png)
+  * MyCat, YourCat 둘 다 가상 테이블의 주소를 가지고 있다
 ## 5. 가상 소멸자
+```c++
+Animal* yourCat = new Cat(5, "Mocha");
+delete yourCat;
+```
+  * 이 경우는 Animal, Cat중 누구의 소멸자가 호출되어야 할까?
+### 5.1. 비 가상 소멸자
+```c++
+// Animal.h
+class Animal
+{
+public:
+  ~Animal();
+private:
+  int mAge;
+}
 
+// Cat.h
+class Cat : public Animal
+{
+public:
+  ~Cat();
+private:
+  char* mName;
+}
+```
+* 경우 1
+  ```c++
+  Cat* myCat = new Cat(2, "Coco");
+  delete myCat;
+  ```
+  * Cat의 소멸자가 호출되고 Animal의 소멸자가 자동적으로 호출 된다
+* 경우 2
+  ```c++
+  Animal* yourCat = new Cat(5, "Mocha");
+  delete yourCat;
+  ```
+  * 정적 바인딩이 적용되어 Animal의 소멸자만 호출 된다
+    * Cat의 소멸자가 호출되지 않으므로 메모리 누수
+* Virtual 키워드를 생략하면 큰일나는 이유임!!
+### 5.2. 가상 소멸자
+  * 소멸자 앞에 virtual 키워드로 가상 소멸자를 설정해주자
+    ![image](https://user-images.githubusercontent.com/22488593/174743182-e3d925cf-f586-43d7-b109-21eed5cd13d6.png)
+  * 누군가 Cat도 상속할 수 있으므로 ~Cat()에도 virtual을 붙여줌
+#### 5.2.1 가상 소멸자 메모리 뷰
+![image](https://user-images.githubusercontent.com/22488593/174743860-3c8005d0-52e7-4f13-b049-f59e1955b884.png)
+* Animal 포인터에 저장되어 있지만 Cat의 가상 소멸자 주소를 알고 있으므로 Cat의 소멸자를 호출할 수 있다
+### 5.3. **모든 소멸자에 언제나 virtual키워드를 붙일 것**
+  * 파생 클래스의 소멸자에도 virtual을 붙여야 하는 이유는
+  * 내가 아닌 누군가가 파생 클래스를 상속할 수 있기 때문
+  * 폴리몰피즘을 이용하여 부모를 delete하면 메모리 누수가 발생한다
+  * 가상 함수는 느림에도 불구하고 넣는게 좋다
 ## 6. 다중(Multiple) 상속
-
+* C++에만 존재하는 것임
+* 다중 상속은 **잘 쓰이지는 않는 개념**임 
+![image](https://user-images.githubusercontent.com/22488593/174748492-ba0d50fd-0cdf-408e-a2d5-981ac2b0e09a.png)
+* 학생의 속성, 교수의 속성을 가진 조교 클래스
+* Student와 Faculty를 다중 상속 받음
+### 6.1 어느 부모의 생성자가 먼저 호출될까?
+* Student와 Faculty중 누구의 생성자가 먼저 호출될까?
+  * 파생 클래스에서 등장한 부모 클래스 순서대로 호출된다
+    ```c++
+    // Student(), Faculty() 순으로 호출
+    class TA : public Student, public Faculty
+    {
+    };
+    
+    // Faculty(), Student() 순으로 호출
+    class TA : public Faculty, public Student
+    {
+    };
+    ```
+  * 초기화 리스트의 순서는 상관 없음
+    ```c++
+    // Student(), Faculty() 순으로 호출
+    class TA : public Student, public Faculty
+      : Faculty()
+      , Student()
+    {
+    };
+    ```
+### 6.2 super()를 쓸 수 없는 이유
+* Java처럼 super()를 쓸 수 없는 이유는 다중 상속이 가능하기 때문이다
+    ![image](https://user-images.githubusercontent.com/22488593/174749733-16782bc5-488e-4a21-8da7-7f85de4842d8.png)
+### 6.3. 문제점1 - 어떤 함수가 호출될까?
+  ![image](https://user-images.githubusercontent.com/22488593/174750137-5e576696-93e0-4bb6-8471-65673238d8e1.png)
+* 어떤 함수가 호출될 지 모호함
+* 해결책 - 우리가 직접 부모 클래스를 특정시켜줌
+  ```c++
+  myTa->Student::DisplayData();
+  ```
+### 6.4. 문제점2 - 다이아몬드 문제
+![image](https://user-images.githubusercontent.com/22488593/174750658-4c22cad5-c445-431e-a599-b992d98d4d17.png)
+* Liger 안에는 Animal이 몇개가 있을까?
+  * 2개가 중첩됨
+* 해결책 - 가상 베이스 클래스
+  * 상속받을 때 virtual을 넣어준다..
+   ![image](https://user-images.githubusercontent.com/22488593/174751014-ab6467a6-d9ad-4c59-8c6f-91f67d91c0b6.png)
+  * Liger가 Animal 하나만 가질 수 있도록 보장한다 
+  * 흔히 쓰일일이 없을 것이다..
+### **다중 상속을 최대한 쓰지 말것, 대신 인터페이스를 사용하자**
 ## 7. 추상(Abstract) 클래스
 
 ## 8. 인터페이스(Interface)
