@@ -7,6 +7,7 @@
 > 3. 추상 소멸자
 > 4. 추상 클래스
 > 5. 생성자 순서 및 소멸자 순서
+
 ## 1. 상속
 
 - 동물 예시
@@ -146,11 +147,13 @@ Cat* myCat = new Cat(2, "Mew");
 - 위 코드를 실행하면 메모리에서 어떤 일이 일어날까?
 
 1. 먼저 부모님의 생성자를 호출하고 부모를 초기화 함
+
    ![image](https://user-images.githubusercontent.com/22488593/174580938-6b7d23f8-6511-4b2c-97cc-6d125e9731f3.png)
 
 - 부모님의 mAge가 2로 초기화 됨
 
 2. 그 다음 자식을 초기화 함
+
    ![image](https://user-images.githubusercontent.com/22488593/174581082-8640c9ed-d6e1-403a-ba86-b8bee1556370.png)
 
 - 메모리를 할당하고 mName에 주소값이 들어간다
@@ -309,13 +312,19 @@ yourCat->GetName();
   - Java는 자식의 것이 호출된다
   - C++은 부모의 것이 호출됨
 - Java는 실체를 따라가고 C++은 무늬를 따라 호출이 됨
+
 * 이것의 이유는 **바인딩**의 차이에 있다
+
 ## 3. 정적 바인딩
-* 무늬따라 가는 것
-* C++는 기본이 정적 바인딩
+
+- 무늬따라 가는 것
+- C++는 기본이 정적 바인딩
+
 ### 3.1. 정적 바인딩 - 멤버 함수
-* Animal의 Speak()와 Cat의 Speak()의 메모리 뷰
-![image](https://user-images.githubusercontent.com/22488593/174729943-ef62f712-299d-4997-8d9e-0a2fc42acfe2.png)
+
+- Animal의 Speak()와 Cat의 Speak()의 메모리 뷰
+  ![image](https://user-images.githubusercontent.com/22488593/174729943-ef62f712-299d-4997-8d9e-0a2fc42acfe2.png)
+
 ```c++
 // main.cpp
 Cat* myCat = new Cat();
@@ -324,10 +333,15 @@ myCat->Speak(); // Call   Cat::Speak(0x0AA16C2)
 Animal* yourCat = new Cat();
 yourCat->Speak();   // Call   Animal::Speak(0x0AA168D)
 ```
-  * myCat은 Cat의 Speak() 호출, yourCat은 Animal의 Speak() 호출
+
+- myCat은 Cat의 Speak() 호출, yourCat은 Animal의 Speak() 호출
+
 ## 4. 동적 바인딩
-* 무늬가 아닌 실체따라 가는 것
+
+- 무늬가 아닌 실체따라 가는 것
+
 ### 4.1. C++에서 동적 바인딩을 하려면 가상(virtual) 함수를 사용
+
 ```c++
 class Animal
 {
@@ -345,42 +359,59 @@ myCat->Speak();   // Meow
 Animal* yourCat = new Cat();
 yourCat->Speak();   // Meow
 ```
-* Animal포인터여도 Cat의 speak()가 호출 된다
+
+- Animal포인터여도 Cat의 speak()가 호출 된다
+
 ### 4.2. 가상함수
-* 자식 클래스의 멤버함수가 언제나 호출됨
-  * 부모의 포인터 또는 참조를 사용 중이더라도
-* 동적(dynamic) 바인딩/늦은(late) 바인딩
-  * 실행 중에 어떤 함수를 호출할지 결정한다
-  * 당연히 컴파일 중에 어떤 함수를 호출할지 정하는 정적 바인딩보다 느림
-* 이를 위해 **가상 테이블**이 생성됨
-  * 모든 가상 멤버함수의 주소를 포함   
-* Java의 모든 것이 기본적으로 가상 함수임
-  * final 키워드로 정적 바인딩으로 만들 수는 있다
-* 가상 테이블은 **클래스 마다 하나**  있다
-  * 멤버 함수는 개체 마다 하나씩 있는 것이 아니라고 했다
-* 개체를 생성할 때, 해당 클래스의 가상 테이블 주소가 함께 저장됨
-  * 가상 테이블의 포인터 4바이트가 들어있고 그다음에 개체의 멤버가 저장된 형태
+
+- 자식 클래스의 멤버함수가 언제나 호출됨
+  - 부모의 포인터 또는 참조를 사용 중이더라도
+- 동적(dynamic) 바인딩/늦은(late) 바인딩
+  - 실행 중에 어떤 함수를 호출할지 결정한다
+  - 당연히 컴파일 중에 어떤 함수를 호출할지 정하는 정적 바인딩보다 느림
+- 이를 위해 **가상 테이블**이 생성됨
+  - 모든 가상 멤버함수의 주소를 포함
+- Java의 모든 것이 기본적으로 가상 함수임
+  - final 키워드로 정적 바인딩으로 만들 수는 있다
+- 가상 테이블은 **클래스 마다 하나** 있다
+  - 멤버 함수는 개체 마다 하나씩 있는 것이 아닌 것 처럼
+- 개체를 생성할 때, 해당 클래스의 가상 테이블 주소가 함께 저장됨
+  - 가상 테이블의 포인터 4바이트가 들어있고 그다음에 개체의 멤버가 저장된 형태
+
 ### 4.3. 가상 테이블
-* 가상 테이블의 동작을 생각해보면 느림
-  * 힙 메모리에서 해당하는 함수를 찾아서 lookup해야 함 
-* 가상 테이블의 주소는 알았는데 가서 몇 번째 함수인지 어떻게 알까? 
+
+- 가상 테이블의 동작을 생각해보면 느림
+  - 힙 메모리에서 해당하는 함수를 찾아서 lookup해야 함
+- 가상 테이블의 주소는 알았는데 가서 몇 번째 함수인지 어떻게 알까?
+
 ### 4.3.1. 동적 바인딩 메모리 뷰
-* 컴파일 시 만들어지는 것들
+
+- 컴파일 시 만들어지는 것들
   ![image](https://user-images.githubusercontent.com/22488593/174738057-44395052-c096-418a-bbbc-6ccaa35d58b2.png)
-    * 코드 섹션에 Animal과 Cat의 Move()와 Speak()이 들어가 있다
-    * Animal과 Cat의 가상 테이블이 따로 존재함
-    * 여기서 중요한 건 함수의 순서가 다 동일하다는 것임
-        * 함수의 순서가 동일해야 가상 테이블에서 어떤 함수가 어디있는지 찾을 수 있다
-* 실행 중에 만들어지는 것들
+  - 코드 섹션에 Animal과 Cat의 Move()와 Speak()이 들어가 있다
+  - Animal과 Cat의 가상 테이블이 따로 존재함
+  - 여기서 중요한 건 함수의 순서가 다 동일하다는 것임
+    - 함수의 순서가 동일해야 가상 테이블에서 어떤 함수가 어디있는지 찾을 수 있다
+- 실행 중에 만들어지는 것들
   ![image](https://user-images.githubusercontent.com/22488593/174738953-43211244-3f8c-49b4-9bba-da63e3a8563a.png)
-  * MyCat, YourCat 둘 다 가상 테이블의 주소를 가지고 있다
+  - MyCat, YourCat 둘 다 가상 테이블의 주소를 가지고 있다
+
 ## 5. 가상 소멸자
+
+### 5.0. 소멸자, 생성자 호출 순서
+
+- 소멸자 호출 순서는 자식 -> 부모 순임
+- 생성자 호출 순서는 부모 -> 자식 순
+
 ```c++
 Animal* yourCat = new Cat(5, "Mocha");
 delete yourCat;
 ```
-  * 이 경우는 Animal, Cat중 누구의 소멸자가 호출되어야 할까?
+
+- 이 경우는 Animal, Cat중 누구의 소멸자가 호출되어야 할까?
+
 ### 5.1. 비 가상 소멸자
+
 ```c++
 // Animal.h
 class Animal
@@ -400,53 +431,68 @@ private:
   char* mName;
 }
 ```
-* 경우 1
+
+- 경우 1
   ```c++
   Cat* myCat = new Cat(2, "Coco");
   delete myCat;
   ```
-  * Cat의 소멸자가 호출되고 Animal의 소멸자가 자동적으로 호출 된다
-* 경우 2
+  - Cat의 소멸자가 호출되고 Animal의 소멸자가 자동적으로 호출 된다
+- 경우 2
   ```c++
   Animal* yourCat = new Cat(5, "Mocha");
   delete yourCat;
   ```
-  * 정적 바인딩이 적용되어 Animal의 소멸자만 호출 된다
-    * Cat의 소멸자가 호출되지 않으므로 메모리 누수
-* Virtual 키워드를 생략하면 큰일나는 이유임!!
+  - 정적 바인딩이 적용되어 Animal의 소멸자만 호출 된다
+    - Cat의 소멸자가 호출되지 않으므로 메모리 누수가 발생할 수 있음
+- Virtual 키워드를 생략하면 큰일나는 이유임!!
+
 ### 5.2. 가상 소멸자
-  * 소멸자 앞에 virtual 키워드로 가상 소멸자를 설정해주자
-    ![image](https://user-images.githubusercontent.com/22488593/174743182-e3d925cf-f586-43d7-b109-21eed5cd13d6.png)
-  * 누군가 Cat도 상속할 수 있으므로 ~Cat()에도 virtual을 붙여줌
+
+- 소멸자 앞에 virtual 키워드로 가상 소멸자를 설정해주자
+  ![image](https://user-images.githubusercontent.com/22488593/174743182-e3d925cf-f586-43d7-b109-21eed5cd13d6.png)
+- 누군가 Cat도 상속할 수 있으므로 ~Cat()에도 virtual을 붙여줌
+
 #### 5.2.1 가상 소멸자 메모리 뷰
+
 ![image](https://user-images.githubusercontent.com/22488593/174743860-3c8005d0-52e7-4f13-b049-f59e1955b884.png)
-* Animal 포인터에 저장되어 있지만 Cat의 가상 소멸자 주소를 알고 있으므로 Cat의 소멸자를 호출할 수 있다
+
+- Animal 포인터에 저장되어 있지만 Cat의 가상 테이블 주소를 알고 있으므로 Cat의 소멸자를 호출할 수 있다
+
 ### 5.3. **모든 소멸자에 언제나 virtual키워드를 붙일 것**
-  * 파생 클래스의 소멸자에도 virtual을 붙여야 하는 이유는
-  * 내가 아닌 누군가가 파생 클래스를 상속할 수 있기 때문
-  * 폴리몰피즘을 이용하여 부모를 delete하면 메모리 누수가 발생한다
-  * 가상 함수는 느림에도 불구하고 넣는게 좋다
+
+- 파생 클래스의 소멸자에도 virtual을 붙여야 하는 이유는
+- 내가 아닌 누군가가 파생 클래스를 상속할 수 있기 때문
+- 폴리몰피즘을 이용하여 부모를 delete하면 메모리 누수가 발생한다
+- 가상 함수는 느림에도 불구하고 넣는게 좋다
+
 ## 6. 다중(Multiple) 상속
-* C++에만 존재하는 것임
-* 다중 상속은 **잘 쓰이지는 않는 개념**임 
-![image](https://user-images.githubusercontent.com/22488593/174748492-ba0d50fd-0cdf-408e-a2d5-981ac2b0e09a.png)
-* 학생의 속성, 교수의 속성을 가진 조교 클래스
-* Student와 Faculty를 다중 상속 받음
+
+- C++에만 존재하는 것임
+- 다중 상속은 **잘 쓰이지는 않는 개념**임  
+   ![image](https://user-images.githubusercontent.com/22488593/174748492-ba0d50fd-0cdf-408e-a2d5-981ac2b0e09a.png)
+- 학생의 속성, 교수의 속성 둘다를 가진 조교 클래스
+- Student와 Faculty를 다중 상속 받음
+
 ### 6.1 어느 부모의 생성자가 먼저 호출될까?
-* Student와 Faculty중 누구의 생성자가 먼저 호출될까?
-  * 파생 클래스에서 등장한 부모 클래스 순서대로 호출된다
+
+- Student와 Faculty중 누구의 생성자가 먼저 호출될까?
+
+  - 파생 클래스에서 등장한 부모 클래스 순서대로 호출된다
+
     ```c++
     // Student(), Faculty() 순으로 호출
     class TA : public Student, public Faculty
     {
     };
-    
+
     // Faculty(), Student() 순으로 호출
     class TA : public Faculty, public Student
     {
     };
     ```
-  * 초기화 리스트의 순서는 상관 없음
+
+  - 초기화 리스트의 순서는 상관 없음
     ```c++
     // Student(), Faculty() 순으로 호출
     class TA : public Student, public Faculty
@@ -455,32 +501,51 @@ private:
     {
     };
     ```
+
 ### 6.2 super()를 쓸 수 없는 이유
-* Java처럼 super()를 쓸 수 없는 이유는 다중 상속이 가능하기 때문이다
-    ![image](https://user-images.githubusercontent.com/22488593/174749733-16782bc5-488e-4a21-8da7-7f85de4842d8.png)
+
+- Java처럼 super()를 쓸 수 없는 이유는 다중 상속이 가능하기 때문이다
+  ```c++
+  class TA : public Student, public Faculty
+    : super("a12345678")    // super가 대체 누구여?
+    , super("Full - time")  // super가 대체 누구여?
+  {
+  };
+  ```
+
 ### 6.3. 문제점1 - 어떤 함수가 호출될까?
-  ![image](https://user-images.githubusercontent.com/22488593/174750137-5e576696-93e0-4bb6-8471-65673238d8e1.png)
-* 어떤 함수가 호출될 지 모호함
-* 해결책 - 우리가 직접 부모 클래스를 특정시켜줌
+
+![image](https://user-images.githubusercontent.com/22488593/174750137-5e576696-93e0-4bb6-8471-65673238d8e1.png)
+
+- 어떤 함수가 호출될 지 모호함
+- 해결책 - 우리가 직접 부모 클래스를 특정시켜줌
   ```c++
   myTa->Student::DisplayData();
   ```
+
 ### 6.4. 문제점2 - 다이아몬드 문제
+
 ![image](https://user-images.githubusercontent.com/22488593/174750658-4c22cad5-c445-431e-a599-b992d98d4d17.png)
-* Liger 안에는 Animal이 몇개가 있을까?
-  * 2개가 중첩됨
-* 해결책 - 가상 베이스 클래스
-  * 상속받을 때 virtual을 넣어준다..
-   ![image](https://user-images.githubusercontent.com/22488593/174751014-ab6467a6-d9ad-4c59-8c6f-91f67d91c0b6.png)
-  * Liger가 Animal 하나만 가질 수 있도록 보장한다 
-  * 흔히 쓰일일이 없을 것이다..
-### **다중 상속을 최대한 쓰지 말것, 대신 인터페이스를 사용하자**
+
+- Liger 안에는 Animal이 몇개가 있을까?
+  - 2개가 중첩됨
+- 해결책 - 가상 베이스 클래스
+  - 상속받을 때 virtual을 넣어준다..
+    ![image](https://user-images.githubusercontent.com/22488593/174751014-ab6467a6-d9ad-4c59-8c6f-91f67d91c0b6.png)
+  - Liger가 Animal 하나만 가질 수 있도록 보장한다
+  - 흔히 쓰일일이 없을 것이다..
+
+### **\* 다중 상속을 최대한 쓰지 말것, 대신 인터페이스를 사용하자**
+
 ## 7. 추상(Abstract) 클래스
-* 구체적인(concrete) 클래스가 아닌것이 추상(abstract) 클래스
-  * 구체적인 클래스는 함수의 구현체가 있는 클래스
-    * 우리가 그동안 봐왔던 클래스
-  * 함수가 여러 개 있는데 그 중 하나라도 구현이 안되면 추상 클래스
-### 7.1. 추상 클래스
+
+- 구체적인(concrete) 클래스가 아닌것이 추상(abstract) 클래스
+  - 구체적인 클래스는 함수의 구현체가 있는 클래스
+    - 우리가 그동안 봐왔던 클래스
+  - 함수가 여러 개 있는데 그 중 하나라도 구현이 안되어 있으면 추상 클래스
+
+### 7.1. 추상 클래스의 필요성
+
 ```c++
 // Animal.h
 class Animal
@@ -502,25 +567,34 @@ private:
   char* mName;
 }
 ```
-* 함수는 만드는데 구현체는 필요 없을 때 
-  * Speak()을 Cat에서 구현을 하고 Animal에서는 구현을 하지 않고 싶을 때
-* virtual void Speak() \= 0\; 이런 식으로 0을 대입하면 추상 클래스를 만들 수 있음
+
+- 함수는 만드는데 구현체는 필요 없을 때
+  - Speak()을 Cat에서 구현을 하고 Animal에서는 구현을 하지 않고 싶을 때
+- virtual void Speak() \= 0\; 이런 식으로 0을 대입하면 추상 클래스를 만들 수 있음
+
 ### 7.2. 순수(pure) 가상함수
-* 구현체가 없는 멤버 함수
-* 파생 클래스가 구현해야 함
-![image](https://user-images.githubusercontent.com/22488593/174774226-832f61f7-d54c-4049-a2e6-f0d0d77328fb.png)
-  * Cat에서Speak()을 구현하지 않으면 컴파일 에러
+
+- 구현체가 없는 멤버 함수
+- 파생 클래스가 구현해야 함  
+  ![image](https://user-images.githubusercontent.com/22488593/174774226-832f61f7-d54c-4049-a2e6-f0d0d77328fb.png)
+  - Cat에서 Speak()을 구현하지 않으면 컴파일 에러
+
 ### 7.3. 순수 가상함수를 선언하는 법
+
 ![image](https://user-images.githubusercontent.com/22488593/174774549-f60f9bb0-33b2-4cbe-a863-978414a14005.png)
+
 ```c++
 virtual void Speak() = 0;
 virtual float GetArea() = 0;
 ```
-### 7.4. 추상 클래스
-* 순수 가상함수를 가지고 있는 베이스 클래스를 추상 클래스라 함
-  * 추상 클래스에서 개체를 만들 수 없음
-  * 추상 클래스를 포인터나 참조 형으로는 사용가능
-    * 동적 바인딩으로 동작하므로 문제없다
+
+### 7.4. 추상 클래스란?
+
+- 순수 가상함수를 가지고 있는 베이스 클래스를 추상 클래스라 함
+  - 추상 클래스에서 개체를 만들 수 없음
+  - 추상 클래스를 포인터나 참조 형으로는 사용가능
+    - 동적 바인딩으로 동작하므로 문제없다
+
 ```c++
 class Animal
 {
@@ -530,13 +604,17 @@ private:
   int mAge;
 };
 ```
-### 7.5. 순수 추상 클래스
-* 순수 가상 함수만 가지는 클래스
-* 데이터도 없다
-* 
+
+### 7.5. 순수 추상 클래스란?
+
+- 순수 가상 함수만 가지는 클래스
+- 데이터도 없다
+
 ## 8. 인터페이스(Interface)
-* C++은 인터페이스를 언어에서 지원 안함
-  * 대신 순수 추상클래스와 다중상속을 이용해서 인터페이스를 흉내낼 수 있음 
+
+- C++은 인터페이스를 언어에서 지원 안함
+  - 대신 순수 추상 클래스와 다중상속을 이용해서 인터페이스를 흉내낼 수 있음
+
 ```c++
 // IFlyable.h
 class IFlyable
@@ -565,10 +643,15 @@ public:
   void Walk();
 };
 ```
-* 인터페이스는 추상 클래스와 달리 데이터는 없고 함수만 있음
-* 동작을 정의하는데 인터페이스가 유용함
-  * IFlyable, IWalkable
-* 다중상속을 사용하지만 데이터가 없고, 함수가 중복될 일이 없다
+
+- 인터페이스는 추상 클래스와 달리 데이터는 없고 함수만 있음 (순수 추상 클래스)
+- 동작을 클래스로 정의하는데는 인터페이스가 유용함
+  - IFlyable, IWalkable
+- 순수 추상 클래스를 사용하요 데이터가 없고, 함수가 중복될 일이 없다
+  - 다중상속의 문제가 발생하지 않는다
+
 ### 8.1. 인터페이스 사용 팁
-* 다른 클래스지만 같은 인터페이스끼리 배열을 만들어서 반복문 처리를 쉽게 할 수 있다
-  * 가상 함수의 동적 바인딩으로 각 클래스가 개별 동작을 할 수 있다 
+
+- 다른 클래스지만 같은 인터페이스끼리 배열을 만들어서 반복문 처리를 쉽게 할 수 있다
+  - 가상 함수의 동적 바인딩으로 각 클래스가 개별 동작을 유지시킬 수 있다
+  * 사용 예 - 같은 인터페이스의 객체 전부에게 특정 동작을 시키고 싶을 때
