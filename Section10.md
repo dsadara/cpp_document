@@ -155,7 +155,44 @@ void MyWriteLine(const char* ptr)   // 우리 프로그램에 있는 함수
 Animal* animal = const_cast<Animal*>(petPtr);
 ```
 ## 5. dynamic_cast
-```c++
-Cat* myCat = dynamic_cast<Cat*>(myPet);
-```
 * static\_cast와 비슷하지만 컴파일 중이 아닌 실행 중에 캐스팅이 된다
+```c++
+Animal* myPet = my Cat();
+
+// 컴파일 됨 그리고 NULL을 반환함
+Dog* myDog = dynamic_cast<Dog*>(myPet);  // static_cast와 달리 캐스팅이 안되고 NULL을 반환해준다
+
+// 컴파일 됨 GetHouseName()은 실행되지 않음
+if (myDog)
+{
+  myDog->GetHouseName();
+}
+```
+### 5.1. dynamic_cast란?
+* 실행 중에 형을 판단
+* 포인터 또는 참조형을 캐스팅할 때만 쓸 수 있음
+  * 다형성을 하려면 포인터나 참조 밖에 안됨  
+* 호환되지 않는 자식형으로 캐스팅하려 하면 NULL을 반환
+  * 호환되지 않음을 실행 시 체크 
+  * 따라서 dynamic_cast가 static_cast보다 안전
+* RTTI가 꺼져 있으면 static_cast랑 동일하게 동작 
+### 5.2. RTTI(Real-Time Type Information, 실시간 타입정보)
+* RTTI는 각 오브젝트나 데이터의 타입정보를 typeid를 통해 실시간으로 불러올 수 있음 dynamic_cast는 이를 이용해서 캐스팅할지 결정함
+* dynamic_cast를 사용하려면 컴파일 중에 RTTI를 켜야 함
+* 그런데 C\++ 프로젝트에서 성능의 이유로 RTTI를 끄는 것이 보통임
+* RTTI의 오버헤드를 줄이기 위해 특정 타입만을 위한 RTTI 비슷한 걸 만들 수 있다
+  * 클래스의 멤버로 mType을 넣고 typeID 연산자처럼 getter를 만들 수 있다
+### 5.3. dynamic_cast 사용법
+![image](https://user-images.githubusercontent.com/22488593/174959540-7fcf233e-19f0-43c2-83f4-297afbf65e30.png)
+## 6. 캐스팅 규칙
+* 제일 안전한 것에서 가장 위험한 것 순으로 사용
+1. 기본적으로 static_cast 사용
+  * reinterpret_cast<Cat*> 대신 static_cast<Cat*>
+    * 만약 Cat이 Animal이 아니라면 컴파일러가 에러를 뱉음
+    * static_cast를 쓰면 컴파일러가 잡아주니까 일단 안심을 하게 됨
+    * 하지만 reinterpret_cast가 나오면 열심히 볼 것   
+3. reinterpret_cast를 쓸 것
+  * 포인터와 비포인터 사이의 변환
+    * 이것을 해야할 일이 있다
+  * 서로 연관이 없는 포인터 사이의 변환은 그 데이터형이 맞다고 **정말 확신**할 때만 할 것   
+5. 내가 변경권한이 없는 외부 라이브러리를 호출할 때만 const_cast를 쓸 것
