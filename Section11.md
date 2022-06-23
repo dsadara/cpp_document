@@ -66,7 +66,8 @@ inline int Square(int number)
 Cat* myCat = new Cat(2, "Coco");
 int age = myCat->GetAge();  // 이거를 myCat.mAge로 바꿔준다 
 ```
-  * 컴파일시 일어남 
+  * 컴파일시 일어남
+  * 컴파일러가 멤버에 접근권한을 체크함
 * 매크로(MACRO)와 매우 비슷한 개념
   * \#define
     ```c++
@@ -84,7 +85,9 @@ int age = myCat->GetAge();  // 이거를 myCat.mAge로 바꿔준다
     * 콜스택에 함수이름이 안 보임
     * 중단점(breakpoint)도 설정 불가능
   * 매크로는 범위(scope)를 준수하지 않음
+    * 인라인 처럼 access check를 하지 않는다   
   * 정말정말 매크로를 쓸 이유가 있지 않는 한 인라인 함수를 쓰자
+    * 매크로는 쓰는 부분은 어느 부분을 컴파일 하고 안할지 정할 때! 
 * 인라인 함수 변환과정
   * 멤버 아닌 함수
     ![image](https://user-images.githubusercontent.com/22488593/174964593-91c0d8cc-3eb4-47b9-a67d-23def4e3fefd.png)
@@ -94,6 +97,8 @@ int age = myCat->GetAge();  // 이거를 myCat.mAge로 바꿔준다
 * inline 키워드는 힌트일 뿐
   * 실제로는 인라인 안될 수도 있음
   * 컴파일러가 자기 맘대로 아무 함수나 인라인 할 수도 있음
+  * 이것 때문에 \_\_forceinline 이라고 강제로 inline을 하게 해주는 키워드가 존재한다
+    * \_\_가 붙여진 건 C++표준이 아닌 플랫폼 종속적인 것임
 * 인라인 함수 구현이 헤더 파일에 위치해야 함
   * 복붙을 하려면 컴파일러가 그 구현체를 불 수 있어야 함
   * 각 cpp 파일은 따로 컴파일 됨
@@ -102,6 +107,7 @@ int age = myCat->GetAge();  // 이거를 myCat.mAge로 바꿔준다
   * 특히 getter나 setter에
 * 실행파일의 크기가 증가하기가 쉬움
   * 동일한 코드를 여러 번 복붙하니까
+    * 많이 호출하는 함수는 인라인을 피하는 것이 좋다 
   * 남용하지 말 것
   * 실행파일이 작을수록 CPU 캐시하고 잘 작동 -> 속도가 빨라질 수 있다
 ### 2.3. 인라인 함수 사용법
